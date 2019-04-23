@@ -1,0 +1,66 @@
+#include "Common.ush"
+#include "ColorUtils.ush"
+#include "GammaCorrectionCommon.ush"
+
+#define WRITE_TO_GBUFFER (FEATURE_LEVEL >= FEATURE_LEVEL_SM4 && !FORWARD_SHADING)
+
+Texture2DArray InTexture;
+SamplerState InTextureSampler;
+
+half4 TextureComponentReplicate;
+half4 TextureComponentReplicateAlpha;
+
+float4x4 ColorWeights;
+
+//x=Gamma, y=MipLevel, z=TextureSlice, w=Unused
+float4 PackedParams;
+
+void Main(
+	in float2 TextureCoordinate : TEXCOORD0,
+	in float4 Color : TEXCOORD1,
+	out float4 OutColor : SV_Target0
+#if WRITE_TO_GBUFFER
+	,out float4 OutWorldNormal : SV_Target1 
+#endif
+	)
+{
+	float Gamma = PackedParams.x;
+	float MipLevel = PackedParams.y;
+	float TextureSlice = PackedParams.z;
+
+	float4 FinalColor;
+	float4 Sample;
+
+	if (MipLevel >= 0.0f)
+	{
+		Sample = Texture2DArraySampleLevel(InTexture, InTextureSampler, float3(TextureCoordinate, TextureSlice), MipLevel);
+	}
+	else
+	{
+		Sample = Texture2DArraySample(InTexture, InTextureSampler, float3(TextureCoordinate, TextureSlice));
+	}
+
+	ReplicateChannel(Sample,TextureComponentReplicate,TextureComponentReplicateAlpha);
+
+	// Seperate the Color weights and use against the Base colour to detrmine the actual colour from our filter
+	FinalColor.r = dot(Sample, ColorWeights[0]);
+	FinalColor.g = dot(Sample, ColorWeights[1]);
+	FinalColor.b = dot(Sample, ColorWeights[2]);
+	FinalColor.a = dot(Sample, ColorWeights[3]);
+
+	FinalColor *= Color;
+
+	if( Gamma != 1.0 )
+	{
+		FinalColor.rgb = ApplyGammaCorrection(saturate(FinalColor.rgb), 2.2 / (1.0 / Gamma));
+	}
+	
+	FinalColor = RETURN_COLOR(FinalColor);	
+		 
+	OutColor = FinalColor;
+
+#if WRITE_TO_GBUFFER
+	// Set the G buffer bits that indicate that deferred lighting and image reflections are not enabled
+	OutWorldNormal = 0;
+#endif
+}
