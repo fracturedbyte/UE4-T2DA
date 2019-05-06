@@ -37,7 +37,7 @@ Just download UnrealEngine-4.21.2 folder from repository and move/replace its co
 
 ### Prerequisites
 
-You have to run you project on UE4 4.21.2 compiled from sources. All prerequisites are the same as for running the usual engine. Merging with later versions of the engine was not tested, however may be possible. Please let us know about your experience in the comments. 
+You have to run you project on UE-4.21.2 compiled from sources. All prerequisites are the same as for running the usual engine. Merging with later versions of the engine was not tested, however may be possible. Please let us know about your experience in the comments. 
 
 ## Using Texture Array assets
 
