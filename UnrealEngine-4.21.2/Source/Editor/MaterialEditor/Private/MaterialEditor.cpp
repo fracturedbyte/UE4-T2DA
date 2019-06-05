@@ -28,6 +28,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialParameterCollection.h"
+#include "Engine/Texture2DArray.h" // FB Bulgakov - Texture2D Array
 #include "Engine/TextureCube.h"
 #include "Dialogs/Dialogs.h"
 #include "UnrealEdGlobals.h"
@@ -60,6 +61,7 @@
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureObject.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
+#include "Materials/MaterialExpressionTextureSampleParameter2DArray.h" // FB Bulgakov - Texture2D Array
 #include "Materials/MaterialExpressionTextureSampleParameterCube.h"
 #include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "Materials/MaterialExpressionTransformPosition.h"
@@ -2498,7 +2500,13 @@ void FMaterialEditor::OnConvertObjects()
 				else if (TextureSampleExpression && TextureSampleExpression->Texture && TextureSampleExpression->Texture->IsA(UTextureCube::StaticClass()))
 				{
 					ClassToCreate = UMaterialExpressionTextureSampleParameterCube::StaticClass();
-				}	
+				}
+				// FB Bulgakov Begin - Texture2D Array
+				else if (TextureSampleExpression && TextureSampleExpression->Texture && TextureSampleExpression->Texture->IsA(UTexture2DArray::StaticClass()))
+				{
+					ClassToCreate = UMaterialExpressionTextureSampleParameter2DArray::StaticClass();
+				}
+				// FB Bulgakov End
 				else if (TextureSampleExpression)
 				{
 					ClassToCreate = UMaterialExpressionTextureSampleParameter2D::StaticClass();

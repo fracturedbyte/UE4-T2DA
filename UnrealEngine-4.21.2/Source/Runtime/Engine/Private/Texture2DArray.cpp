@@ -532,7 +532,7 @@ bool UTexture2DArray::ShaderPlatformSupportsCompression(EShaderPlatform ShaderPl
 
 void UTexture2DArray::UpdateMipGenSettings()
 {
-	if (PowerOfTwoMode == ETexturePowerOfTwoSetting::None && (!Source.IsPowerOfTwo() || !FMath::IsPowerOfTwo(Source.NumSlices)))
+	if (!Source.IsPowerOfTwo())
 	{
 		// Force NPT textures to have no mipmaps.
 		MipGenSettings = TMGS_NoMipmaps;

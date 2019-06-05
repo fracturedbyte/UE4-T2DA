@@ -181,6 +181,7 @@
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
+#include "Materials/MaterialExpressionTextureSampleParameter2DArray.h" // FB Bulgakov - Texture2D Array
 #include "Materials/MaterialExpressionAntialiasedTextureMask.h"
 #include "Materials/MaterialExpressionTextureSampleParameterSubUV.h"
 #include "Materials/MaterialExpressionTextureSampleParameterCube.h"
@@ -206,6 +207,7 @@
 #include "Materials/MaterialExpressionAtmosphericLightColor.h"
 #include "Materials/MaterialExpressionMaterialLayerOutput.h"
 #include "Materials/MaterialExpressionCurveAtlasRowParameter.h"
+#include "Materials/MaterialExpressionUnpackInt.h" // FB Bulgakov - Texture2D Array
 #include "EditorSupportDelegates.h"
 #include "MaterialCompiler.h"
 #if WITH_EDITOR
@@ -2288,6 +2290,73 @@ void UMaterialExpressionTextureSampleParameter2D::SetDefaultTexture()
 {
 	Texture = LoadObject<UTexture2D>(NULL, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"), NULL, LOAD_None, NULL);
 }
+
+// FB Bulgakov Begin - Texture2D Array
+//
+//  UMaterialExpressionTextureSampleParameter2DArray
+//
+UMaterialExpressionTextureSampleParameter2DArray::UMaterialExpressionTextureSampleParameter2DArray(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Structure to hold one-time initialization
+	struct FConstructorStatics
+	{
+		ConstructorHelpers::FObjectFinder<UTexture2DArray> DefaultTexture;
+		FText NAME_Texture;
+		FText NAME_Parameters;
+		FConstructorStatics()
+			: DefaultTexture(TEXT("/Engine/EngineResources/DefaultTexture_2DArray"))
+			, NAME_Texture(LOCTEXT("Texture", "Texture"))
+			, NAME_Parameters(LOCTEXT("Parameters", "Parameters"))
+		{
+		}
+	};
+	static FConstructorStatics ConstructorStatics;
+	
+	Texture = ConstructorStatics.DefaultTexture.Object;
+
+#if WITH_EDITORONLY_DATA
+	MenuCategories.Empty();
+	MenuCategories.Add(ConstructorStatics.NAME_Texture);
+	MenuCategories.Add(ConstructorStatics.NAME_Parameters);
+#endif
+}
+
+#if WITH_EDITOR
+void UMaterialExpressionTextureSampleParameter2DArray::GetCaption(TArray<FString>& OutCaptions) const
+{
+	OutCaptions.Add(TEXT("Param2DArray"));
+	OutCaptions.Add(FString::Printf(TEXT("'%s'"), *ParameterName.ToString()));
+}
+#endif // WITH_EDITOR
+
+bool UMaterialExpressionTextureSampleParameter2DArray::TextureIsValid(UTexture* InTexture)
+{
+	bool Result = false;
+	if (InTexture)
+	{
+		if (InTexture->IsA(UTexture2DArray::StaticClass()))
+		{
+			Result = true;
+		}
+		if (InTexture->GetMaterialType() == MCT_TextureExternal)
+		{
+			Result = true;
+		}
+	}
+	return Result;
+}
+
+const TCHAR* UMaterialExpressionTextureSampleParameter2DArray::GetRequirements()
+{
+	return TEXT("Requires Texture2D Array");
+}
+
+void UMaterialExpressionTextureSampleParameter2DArray::SetDefaultTexture()
+{
+	Texture = LoadObject<UTexture2D>(NULL, TEXT("/Engine/EngineResources/DefaultTexture_2DArray.DefaultTexture_2DArray"), NULL, LOAD_None, NULL);
+}
+// FB Bulgakov End
 
 #if WITH_EDITOR
 
@@ -14764,4 +14833,51 @@ void UMaterialExpressionCurveAtlasRowParameter::PostEditChangeProperty(FProperty
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+// FB Bulgakov Begin - Texture2D Array
+//
+//  UMaterialExpressionUnpackInt
+//
+
+UMaterialExpressionUnpackInt::UMaterialExpressionUnpackInt(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Structure to hold one-time initialization
+	struct FConstructorStatics
+	{
+		FText NAME_Math;
+		FConstructorStatics()
+			: NAME_Math(LOCTEXT("Data Packing", "Data Packing"))
+		{
+		}
+	};
+	static FConstructorStatics ConstructorStatics;
+
+#if WITH_EDITORONLY_DATA
+	MenuCategories.Add(ConstructorStatics.NAME_Math);
+#endif
+}
+
+#if WITH_EDITOR
+int32 UMaterialExpressionUnpackInt::Compile(class FMaterialCompiler* Compiler, int32 OutputIndex)
+{
+	if (!Input.GetTracedInput().Expression)
+	{
+		return Compiler->Errorf(TEXT("Missing unpack input"));
+	}
+
+	const float Fraction = 255.0f;
+
+	return Compiler->Floor(Compiler->Add(Compiler->Mul(Input.Compile(Compiler), Compiler->Constant(Fraction)), Compiler->Constant(0.5f / Fraction)));
+}
+
+void UMaterialExpressionUnpackInt::GetCaption(TArray<FString>& OutCaptions) const
+{
+	OutCaptions.Add(TEXT("UnpackInt"));
+}
+#endif // WITH_EDITOR
+
+// FB Bulgakov End
+
+
 #undef LOCTEXT_NAMESPACE
