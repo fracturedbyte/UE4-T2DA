@@ -33,7 +33,7 @@ alt="Video Demonstration" width="640" height="480" border="10" /></a></p>
 
 ## Getting Started
 
-Just download UnrealEngine-4.21.2 folder from repository and move/replace its contents to your engine folder. You will also have to recompile your engine afterwards. 
+Just download UnrealEngine-4.21.2 folder from repository and move/replace its contents to your engine folder. You will also have to **recompile** your engine afterwards because Unreal Build Tool can incorrectly track changes of replaced files. 
 
 ### Prerequisites
 
@@ -82,6 +82,24 @@ textureSliceID / (textureArrayLength - 1)
 ```
 For an in-depth look please refer to material examples supplied with the sample project:
 **Material'/Game/LBL/Materials/BaseMegaAtlas.BaseMegaAtlas'**
+
+### Advanced vertex painting tools
+
+We added special vertex painting mode that allows to encode integer number to vertex color. For current moment we use only red channel for saving vertex data.
+
+![New vertex painting mode with new features](Documentation/AdvancedPaintingMode.png)
+
+This painting mode is designed to work with texture 2d arrays. When you select actor(s), painting tool searches for the first texture 2d array in all assigned materials, and shows these texture slices in painting toolbar. Selecting specific slice automatically updates painting color to match its number in Texture Array. 
+
+![Decoding slice index from vertex color](Documentation/UnpackInt.png)
+
+We've added special material node UnpackInt that performs decoding of the index slice in new painting tools. Also, you can override auto loaded texture2d array with custom texture. It is useful if you have several texture arrays in material and you want to force a specific texture for tile preview. If you do not use texture array in materials, but you want to encode number in vertex color you can override slice ID in "Number To Paint" field.
+
+### General Painting Tools Improvements
+
+Global painting technique has several new features that designed to improve work:
+ - Only selected triangle - this feature allows to paint only vertices of selected triangle. If it is enabled, current triangle will be highlighted. Brush Falloff doesn't have any effect when this mode is enabled.
+ - Use normal deviation - this feature allows to select a bunch of triangles with the normal that have small deviation from base normal (the currently active triangle). You need to use "Normal Deviation" field to control amount of deviation. It is measured from -1 to 1 (-1 - all normals, 0 - 90 degrees deviation, 1 - means identical normals)
 
 ### Restrictions
 - Texture Arrays are supported only in DX10/DX11.
